@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ஜாமம் கணக்கீடு</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #d4fc79, #96e6a1);
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            overflow-x: hidden;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+            margin: 0 10px;
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+
+        .time-picker {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        select {
+            padding: 8px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #f0f0f0;
+            color: #333;
+            flex: 1;
+            margin-right: 5px;
+        }
+
+        select:last-child {
+            margin-right: 0;
+        }
+
+        button {
+            padding: 10px 0;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            background-color: #2c3e50;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #34495e;
+        }
+
+        #results, #calculationNotes {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            text-align: left;
+            word-wrap: break-word;
+        }
+
+        .jamam {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .note {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 1rem;
+            text-align: left;
+            color: #2c3e50;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .note strong {
+            color: #2980b9;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                width: 100%;
+                padding: 15px;
+            }
+
+            select, button {
+                font-size: 0.9rem;
+                padding: 8px 5px;
+            }
+
+            #results, #calculationNotes {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ஜாமம் கணக்கீடு</h1>
+        <p>தொடக்க நேரம் (AM) மற்றும் முடிவு நேரம் (PM) தேர்வு செய்யவும்:</p>
+        <div class="time-picker">
+            <select id="startHour"></select>
+            <select id="startMinute"></select>
+            <select id="startSecond"></select>
+            <select id="startAmPm">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+            </select>
+        </div>
+        <div class="time-picker">
+            <select id="endHour"></select>
+            <select id="endMinute"></select>
+            <select id="endSecond"></select>
+            <select id="endAmPm">
+                <option value="PM">PM</option>
+                <option value="AM">AM</option>
+            </select>
+        </div>
+        <button onclick="calculateJamams()">5 ஜாமம் கணக்கிடுங்கள்</button>
+
+        <div id="results"></div>
+        <div id="calculationNotes"></div>
+    </div>
+
+    <script>
+        function populateTimeOptions() {
+            const hours = [...Array(12).keys()].map(i => i + 1); // 1 to 12
+            const minutesSeconds = [...Array(60).keys()];
+
+            const hourSelects = [document.getElementById('startHour'), document.getElementById('endHour')];
+            const minuteSelects = [document.getElementById('startMinute'), document.getElementById('endMinute')];
+            const secondSelects = [document.getElementById('startSecond'), document.getElementById('endSecond')];
+
+            hours.forEach(hour => {
+                const option = new Option(hour.toString().padStart(2, '0'), hour);
+                hourSelects.forEach(select => select.add(option.cloneNode(true)));
+            });
+
+            minutesSeconds.forEach(minuteSecond => {
+                const option = new Option(minuteSecond.toString().padStart(2, '0'), minuteSecond);
+                minuteSelects.concat(secondSelects).forEach(select => select.add(option.cloneNode(true)));
+            });
+        }
+
+        function formatTime(date) {
+            let hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            return `${hours.toString().padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
+        }
+
+        function calculateJamams() {
+            let startHour = parseInt(document.getElementById('startHour').value);
+            const startMinute = parseInt(document.getElementById('startMinute').value);
+            const startSecond = parseInt(document.getElementById('startSecond').value);
+            const startAmPm = document.getElementById('startAmPm').value;
+
+            let endHour = parseInt(document.getElementById('endHour').value);
+            const endMinute = parseInt(document.getElementById('endMinute').value);
+            const endSecond = parseInt(document.getElementById('endSecond').value);
+            const endAmPm = document.getElementById('endAmPm').value;
+
+            // Convert 12-hour time to 24-hour time
+            if (startAmPm === 'PM' && startHour !== 12) startHour += 12;
+            if (startAmPm === 'AM' && startHour === 12) startHour = 0;
+
+            if (endAmPm === 'PM' && endHour !== 12) endHour += 12;
+            if (endAmPm === 'AM' && endHour === 12) endHour = 0;
+
+            const start = new Date(1970, 0, 1, startHour, startMinute, startSecond);
+            const end = new Date(1970, 0, 1, endHour, endMinute, endSecond);
+
+            const totalDurationMinutes = (end.getTime() - start.getTime()) / 60000;
+            const intervalDurationMinutes = totalDurationMinutes / 5;
+
+            const results = [];
+            const notes = [];
+
+            for (let i = 0; i < 5; i++) {
+                const intervalStart = new Date(start.getTime() + i * intervalDurationMinutes * 60000);
+                const intervalEnd = new Date(intervalStart.getTime() + intervalDurationMinutes * 60000);
+
+                const startStr = formatTime(intervalStart);
+                const endStr = formatTime(intervalEnd);
+
+                results.push(`<div class="jamam">ஜாமம் ${i + 1}: ${startStr} - ${endStr}</div>`);
+
+                if (i === 0) {
+                    const totalHours = Math.floor(totalDurationMinutes / 60);
+                    const totalMinutes = totalDurationMinutes % 60;
+
+                    const intervalHours = Math.floor(intervalDurationMinutes / 60);
+                    const intervalMinutes = Math.floor(intervalDurationMinutes % 60);
+                    const intervalSeconds = Math.floor((intervalDurationMinutes * 60) % 60);
+
+                    notes.push(`
+                        <div class="note">
+                            <strong>ஜாமம் 1 கணக்கீடு:</strong><br><br>
+                            1. <strong>மொத்த நேரம்:</strong> முடிவு நேரம் - தொடக்க நேரம் = மொத்தம்<br>
+                               &nbsp;&nbsp;${formatTime(end)} - ${formatTime(start)} = ${totalHours} மணி ${totalMinutes} நிமிடம்.<br><br>
+                            2. <strong>ஒரு ஜாமம் நேரம்:</strong> மொத்த நேரம் / 5.<br>
+                               &nbsp;&nbsp;${totalHours} மணி ${totalMinutes} நிமிடம் = ${intervalHours} மணி ${intervalMinutes} நிமிடம் ${intervalSeconds} விநாடிகள்.<br><br>
+                            3. <strong>ஜாமம் 1:</strong> தொடக்க நேரம் + ஜாமம் நேரம்.<br>
+                               &nbsp;&nbsp;${formatTime(start)} + ${intervalHours} மணி ${intervalMinutes} நிமிடம் = ${formatTime(intervalEnd)}.
+                        </div>
+                    `);
+                }
+            }
+
+            document.getElementById('results').innerHTML = results.join('');
+            document.getElementById('calculationNotes').innerHTML = notes.join('');
+        }
+
+        window.onload = populateTimeOptions;
+    </script>
+
+</body>
+</html>
